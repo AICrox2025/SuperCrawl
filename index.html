@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="sk" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qmay UltraEfficient Control Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="h-full flex flex-col font-sans antialiased">
+
+    <header class="border-b border-slate-800 bg-slate-950/50 backdrop-blur px-6 py-4 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" id="status-indicator"></div>
+            <h1 class="text-xl font-bold tracking-wider text-slate-50">QMAY // ENGINE CORE v2.0</h1>
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="controlCrawl('start')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition">START</button>
+            <button onclick="controlCrawl('stop')" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition">STOP</button>
+        </div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 p-6 overflow-hidden">
+        
+        <div class="space-y-6 overflow-y-auto pr-2">
+            <div class="bg-slate-950/40 border border-slate-800 p-5 rounded-xl shadow-md">
+                <h2 class="text-sm font-semibold tracking-wider text-slate-400 uppercase mb-4">Konfigurácia Cieľa & Parametrov</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">OpenSearch URL</label>
+                        <input id="cfg-url" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">User</label>
+                            <input id="cfg-user" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Password</label>
+                            <input id="cfg-pass" type="password" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">User Agent</label>
+                        <input id="cfg-ua" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Max Depth</label>
+                            <input id="cfg-depth" type="number" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">RAM Limit (MB)</label>
+                            <input id="cfg-ram" type="number" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <button onclick="saveConfig()" class="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 font-medium py-2 rounded transition text-sm">Uložiť Konfiguráciu</button>
+                </div>
+            </div>
+
+            <div class="bg-slate-950/40 border border-slate-800 p-5 rounded-xl shadow-md">
+                <h2 class="text-sm font-semibold tracking-wider text-slate-400 uppercase mb-4">Vkladanie URL adries</h2>
+                <div class="space-y-3">
+                    <textarea id="manual-urls" placeholder="Sem vlož URL adresy (jedna na riadok)..." class="w-full h-24 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                    <button onclick="injectManualUrls()" class="w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-medium py-2 rounded transition text-sm border border-emerald-500/30">Pridať do Fronty</button>
+                    
+                    <div class="border-t border-slate-800 my-4 pt-4">
+                        <label class="block text-xs text-slate-400 mb-2">Import zo súboru .txt</label>
+                        <input type="file" id="txt-file" accept=".txt" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-850 file:text-slate-300 hover:file:bg-slate-750 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="xl:col-span-2 flex flex-col space-y-6 overflow-hidden">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-xl text-center shadow">
+                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Indexované stránky</div>
+                    <div id="stat-crawled" class="text-2xl font-bold text-emerald-400">0</div>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-xl text-center shadow">
+                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Čaká vo fronte</div>
+                    <div id="stat-queued" class="text-2xl font-bold text-sky-400">0</div>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-xl text-center shadow">
+                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Aktuálna hĺbka</div>
+                    <div id="stat-depth" class="text-2xl font-bold text-purple-400">0</div>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-xl text-center shadow">
+                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Chyby / Skipnuté</div>
+                    <div id="stat-errors" class="text-2xl font-bold text-rose-400">0</div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950/40 border border-slate-800 p-4 rounded-xl flex-1 max-h-[300px]">
+                <canvas id="speedChart"></canvas>
+            </div>
+
+            <div class="bg-black/80 border border-slate-800 rounded-xl p-4 flex-1 font-mono text-xs flex flex-col shadow-inner overflow-hidden">
+                <div class="flex items-center justify-between text-slate-500 mb-2 border-b border-slate-900 pb-2">
+                    <span>LIVE LOG MONITOR (BEZ ZÁPISU NA DISK)</span>
+                    <span class="text-emerald-500 animate-pulse">● ONLINE</span>
+                </div>
+                <div id="log-terminal" class="flex-1 overflow-y-auto space-y-1 pr-2 text-slate-300 selection:bg-emerald-500 selection:text-black">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ctx = document.getElementById('speedChart').getContext('2d');
+        const speedChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Priebeh indexácie v čase',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
+                    y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } }
+                }
+            }
+        });
+
+        let firstLoad = true;
+
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+
+                if (firstLoad) {
+                    document.getElementById('cfg-url').value = data.config.opensearch_url;
+                    document.getElementById('cfg-user').value = data.config.username;
+                    document.getElementById('cfg-pass').value = data.config.password;
+                    document.getElementById('cfg-ua').value = data.config.user_agent;
+                    document.getElementById('cfg-depth').value = data.config.max_depth;
+                    document.getElementById('cfg-ram').value = data.config.max_memory_mb;
+                    firstLoad = false;
+                }
+
+                document.getElementById('stat-crawled').innerText = data.stats.pages_crawled;
+                document.getElementById('stat-queued').innerText = data.stats.pages_queued;
+                document.getElementById('stat-depth').innerText = data.stats.current_depth;
+                document.getElementById('stat-errors').innerText = data.stats.errors_count;
+
+                const ind = document.getElementById('status-indicator');
+                if (data.is_running) {
+                    ind.className = "h-3 w-3 rounded-full bg-emerald-500 animate-pulse";
+                } else {
+                    ind.className = "h-3 w-3 rounded-full bg-amber-500";
+                }
+
+                const term = document.getElementById('log-terminal');
+                term.innerHTML = data.logs.map(l => `<div>${l}</div>`).join('');
+                term.scrollTop = term.scrollHeight;
+
+                const now = new Date().toLocaleTimeString();
+                speedChart.data.labels.push(now);
+                speedChart.data.datasets[0].data.push(data.stats.pages_crawled);
+                if (speedChart.data.labels.length > 20) {
+                    speedChart.data.labels.shift();
+                    speedChart.data.datasets[0].data.shift();
+                }
+                speedChart.update();
+
+            } catch (e) {
+                console.error("Chyba synchronizácie s Rust jadrom:", e);
+            }
+        }
+
+        async function saveConfig() {
+            const body = {
+                opensearch_url: document.getElementById('cfg-url').value,
+                username: document.getElementById('cfg-user').value,
+                password: document.getElementById('cfg-pass').value,
+                user_agent: document.getElementById('cfg-ua').value,
+                max_depth: parseInt(document.getElementById('cfg-depth').value),
+                max_memory_mb: parseInt(document.getElementById('cfg-ram').value)
+            };
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        }
+
+        async function controlCrawl(action) {
+            await fetch(`/api/${action}`, { method: 'POST' });
+        }
+
+        async function injectManualUrls() {
+            const text = document.getElementById('manual-urls').value;
+            const urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+            if (urls.length > 0) {
+                await fetch('/api/urls', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls })
+                });
+                document.getElementById('manual-urls').value = '';
+            }
+        }
+
+        document.getElementById('txt-file').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const urls = reader.result.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+                if (urls.length > 0) {
+                    await fetch('/api/urls', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ urls })
+                    });
+                }
+            };
+            reader.readAsText(this.files[0]);
+        });
+
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>
